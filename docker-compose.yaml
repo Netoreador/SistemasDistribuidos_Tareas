@@ -1,0 +1,74 @@
+services:
+  # 1. Base de datos Redis
+  redis-db:
+    image: redis:alpine
+    container_name: redis_server
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pipeline-net
+
+  # 2. Contenedor Node.js
+  node-app:
+    build: ./see
+    container_name: respuestas
+    volumes:
+      - ./data:/data
+    depends_on:
+      redis-db:
+        condition: service_healthy
+    networks:
+      - pipeline-net
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  # 3. Contenedor Lector de CSV (Python)
+  csv-reader:
+    build: ./envia
+    container_name: csv_reader_service
+    volumes:
+      - ./data:/data
+    depends_on:
+      redis-db:
+        condition: service_healthy
+    networks:
+      - pipeline-net
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  # 4. Contenedor Escritor de CSV (Python)
+  csv-writer:
+    build: ./write
+    container_name: csv_writer_service
+    volumes:
+      - ./data:/data
+    depends_on:
+      redis-db:
+        condition: service_healthy
+    networks:
+      - pipeline-net
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  redis-manager:
+    build: ./redis
+    container_name: redis_manager
+    volumes:
+      - ./data:/data
+    depends_on:
+      redis-db:
+        condition: service_healthy
+    networks:
+      - pipeline-net
+    environment:
+      - PYTHONUNBUFFERED=1
+
+# Define the network used by all services above
+networks:
+  pipeline-net:
+    driver: bridge
