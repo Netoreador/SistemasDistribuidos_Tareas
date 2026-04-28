@@ -3,6 +3,7 @@ import csv
 import statistics
 import numpy as np
 import requests
+import time
 
 app = Flask(__name__)
 
@@ -44,22 +45,45 @@ def receive_data():
     
     Query=dat.get('Q')
     Zone=dat.get('Z')
+    times=time.time()
+    times=times+dat.get('time')
+
     llave=list(ZONAS.keys())
     llave_zone=llave[Zone-1]
     if Query==1:
         respone=q1_count(llave_zone, 0)
 
-    if Query ==2:
+    elif Query ==2:
         respone=q2_area(llave_zone, 0)
-    if Query ==3:
-        respone=q2_area(llave_zone, 0)
-    if Query ==4:
-        Ztwo=dat.get('Z1')
-        respone=q2_area(llave_zone,keys[Ztwo-1], 0)
-    if Query ==5:
-        respone=q2_area(llave_zone, 0)
+    elif Query ==3:
+        respone=q3_density(llave_zone, 0)
+    elif Query ==5:
+        respone=q5_confidence_dist(llave_zone)
     print("back to redis")
-    requests.post("http://csv-writer:5000/data", json={"Q":Query,"Z":Zone,"R":respone, "Tasa" : 'Miss'})
+    requests.post("http://csv-writer:5000/data", json={"Q":Query,"Z":Zone,"R":respone, "Tasa" : "Miss","time":times})
+    return jsonify(respone), 200
+
+@app.route('/data2', methods=['POST'])                 #para query 4
+def receive_data_2():
+    # request.get_json() automatically parses the JSON you sent
+    dat = request.get_json()
+    
+    Query=dat.get('Q')
+    Zone=dat.get('Z')
+    Zone2=dat.get('Z2')
+    llave=list(ZONAS.keys())
+    llave_zone=llave[Zone-1]
+    llave_zone2=llave[Zone2-1]
+    times=time.time()
+    times=times+dat.get('time')
+
+    if Query ==4:
+
+        respone=q4_compare(llave_zone,llave_zone2, 0)
+
+    print("back to redis")
+    Zones=Zone*10+Zone2
+    requests.post("http://csv-writer:5000/data", json={"Q":Query,"Z":Zones,"R":respone, "Tasa" : "Miss","time":times})
     return jsonify(respone), 200
 
 def q1_count ( zone_id , confidence_min =0.0) :
@@ -85,18 +109,18 @@ def q5_confidence_dist(zone_id, bins=5):
     # 1. Extract the confidence scores from your pre-loaded data
     # Reminder: Use dictionary indexing r['confidence'] instead of r.confidence
     scores = [r['confidence'] for r in building[zone_id]]
-    
-    if not scores:
-        return []
 
     # 2. Use numpy.histogram to calculate the distribution
     # counts: How many items in each bucket
     # edges: The boundaries (e.g., 0.0, 0.2, 0.4...)
     counts, edges = np.histogram(scores, bins=bins, range=(0, 1))
-
+    print(counts)
+    print(edges)
     # 3. Format the result as a list of dictionaries
     distribution = []
+    print("???")
     for i in range(bins):
+        print("wow")
         distribution.append({
             "bucket": i + 1,
             "min": float(edges[i]),      # Conversion to float is better for JSON
