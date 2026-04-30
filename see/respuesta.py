@@ -74,8 +74,8 @@ def receive_data_2():
     llave=list(ZONAS.keys())
     llave_zone=llave[Zone-1]
     llave_zone2=llave[Zone2-1]
-    times=time.time()
-    times=times+dat.get('time')
+   # times=time.time()
+    times=dat.get('time')
 
     if Query ==4:
 
