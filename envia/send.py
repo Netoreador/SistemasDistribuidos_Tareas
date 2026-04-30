@@ -11,7 +11,7 @@ def ejecutar_consultas():
     misses = 0
 
     Query = random.randrange(1,6)
-    Zone = random.randrange(1,5)
+    Zone = random.randrange(1,6)
     print("sending ", Query, " ", Zone)
     if Query == 4:
         Zone2 = random.randrange(1,5)
@@ -26,11 +26,11 @@ def ejecutar_consultas_zipf():
     val_zone=[1,2,3,4,5]
     zipf_zone=[1/1,1/2,1/3,1/4,1/5]
 
-    val_query=[1,2,3,4,5,6]
-    zipf_query=[1/1,1/2,1/3,1/4,1/5,1/6]
+    val_query=[1,2,3,4,5]
+    zipf_query=[1/1,1/2,1/3,1/4,1/5]
 
-    Query = random.choices(val_query,weights=zipf_query)
-    Zone = random.choices(val_zone,weights=zipf_zone)
+    Query = random.choices(val_query,weights=zipf_query)[0]
+    Zone = random.choices(val_zone,weights=zipf_zone)[0]
     print("sending ", Query, " ", Zone)
     if Query == 4:
         Zone2 = random.randrange(1,5)
@@ -50,7 +50,7 @@ if __name__ == '__main__':
         while True:
             try:
                 ejecutar_consultas()
-                time.sleep(1)
+               # time.sleep(1)
             except:
                 print("Nope")
                 time.sleep(5)
@@ -58,7 +58,7 @@ if __name__ == '__main__':
         while True:
             try:
                 ejecutar_consultas_zipf()
-                time.sleep(1)
+             #   time.sleep(1)
             except:
                 print("Nope")
                 time.sleep(5)
