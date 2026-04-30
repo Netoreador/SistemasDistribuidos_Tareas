@@ -22,8 +22,8 @@ def receive_data():
     R=str(R)
     R=R.strip('\n')
     Res=data.get('Tasa')
-    times=time.time()
-    times=times+data.get('time')
+    times=data.get('time')
+    times = time.time()-times
 
     if Res == 'Miss':
         Total +=1
