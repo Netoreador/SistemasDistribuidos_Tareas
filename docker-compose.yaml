@@ -14,9 +14,10 @@ services:
       - pipeline-net
     command: >
       redis-server 
-      --maxmemory 20mb
-      --maxmemory-policy allkeys-lru
-     # --maxmemory-policy allkeys-lfu
+      --maxmemory 1443kb
+    
+      --maxmemory-policy allkeys-lfu
+#  --maxmemory-policy allkeys-lru
 
   # 2. Contenedor Node.js
   node-app:
