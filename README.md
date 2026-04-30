@@ -23,7 +23,9 @@ Revisar los resultados:
 El sistema comenzará a generar tráfico automáticamente. Puedes abrir el archivo results.csv que se generará en tu carpeta local para ver en tiempo real las métricas de Tasa (Hit Rate), Latencia y Throughput.
 
 Ajustar parámetros (Opcional):
-Si quieres probar otra política de evicción (allkeys-lru o allkeys-lfu) o cambiar el límite de memoria del caché (ej. 20MB o 50MB), debes modificar el archivo docker-compose.yml en el servicio de Redis y volver a ejecutar el paso 2.
+Si quieres probar otra política de evicción (allkeys-lru o allkeys-lfu) o cambiar el límite de memoria del caché, debes modificar el archivo docker-compose.yml en el servicio de Redis y volver a ejecutar el paso 2.
+
+En cuanto a las politicas de emision, se noto que esta solo funcionaban para valores de memoria maxima entre 1440kb y 1450kb, asique si quiere ver la politica de esmision en accion cambia la memoria entre esos valores.
 
 Detener y limpiar todo:
 Cuando termines de probar, baja los contenedores con:
