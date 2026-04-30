@@ -45,8 +45,8 @@ def receive_data_2():
     Z=data.get('Z')
     Z2=data.get('Z2')
     Sums=Q*100+Z*10+Z2
-    times=time.time()
-    times=times+data.get('time')
+   # times=time.time()
+    times=data.get('time')
 
     Q1=data.get('Q1')
     Z1=data.get('Z1')
@@ -57,7 +57,7 @@ def receive_data_2():
         print("send to backend")
         response = requests.post("http://node-app:5000/data2", json={"Q":Q,"Z":Z,"Z2":Z2,"time":times})
         print(response.json())
-        r.set(str(Sums),response.text, ex=100)
+        r.set(str(Sums),response.text)
         print("at 0")
         print(r.get(str(Sums)))
         return jsonify(response.json()), 200
