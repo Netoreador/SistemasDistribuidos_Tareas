@@ -2,9 +2,10 @@ import time
 import json
 import random
 import requests
-from flask import request, Flask, jsonify
+#from flask import request, Flask, jsonify
+from confluent_kafka import Producer
 
-times = time.time()
+prod = Producer({'bootstrap.servers': 'kafka:29092'})
 
 def ejecutar_consultas():
     hits = 0
@@ -12,14 +13,17 @@ def ejecutar_consultas():
 
     Query = random.randrange(1,6)
     Zone = random.randrange(1,6)
+    
+
     print("sending ", Query, " ", Zone)
     if Query == 4:
         Zone2 = random.randrange(1,5)
-        response = requests.post("http://redis-manager:5000/data2", json={"Q":Query,"Z":Zone,"Z2":Zone2,"time":times})
+        data = {"Q":Query, "Z":Zone, "Z2": Zone2, "T":time.time()}
+        response = prod.produce('queries', value=json.dumps(data).encode('utf-8'))
 
     else:
-
-        response = requests.post("http://redis-manager:5000/data", json={"Q":Query,"Z":Zone,"time":times})
+        data = {"Q":Query, "Z":Zone,  "T":time.time()}
+        response = prod.produce('queries', value=json.dumps(data).encode('utf-8'))
 
 def ejecutar_consultas_zipf():
     
@@ -34,11 +38,13 @@ def ejecutar_consultas_zipf():
     print("sending ", Query, " ", Zone)
     if Query == 4:
         Zone2 = random.randrange(1,5)
-        response = requests.post("http://redis-manager:5000/data2", json={"Q":Query,"Z":Zone,"Z2":Zone2,"time":times})
+        data = {"Q":Query, "Z":Zone, "Z2": Zone2, "T":time.time()}
+        prod.produce('queries2', value=json.dumps(data).encode('utf-8'))
 
     else:
 
-        response = requests.post("http://redis-manager:5000/data", json={"Q":Query,"Z":Zone,"time":times})
+        data = {"Q":Query, "Z":Zone,  "T":time.time()}
+        prod.produce('queries', value=json.dumps(data).encode('utf-8'))
 
 
 if __name__ == '__main__':
@@ -50,7 +56,8 @@ if __name__ == '__main__':
         while True:
             try:
                 ejecutar_consultas()
-               # time.sleep(1)
+                prod.poll(0)
+                time.sleep(1)
             except:
                 print("Nope")
                 time.sleep(5)
@@ -58,7 +65,8 @@ if __name__ == '__main__':
         while True:
             try:
                 ejecutar_consultas_zipf()
-             #   time.sleep(1)
+                prod.poll(0)
+                time.sleep(1)
             except:
                 print("Nope")
                 time.sleep(5)
