@@ -39,7 +39,7 @@ def receive_data():
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         print("writing")
         
-        through = Total/tiempo_total
+        through = Total/times
         writer.writerow({'Query': Q, 'Zone': Z, 'Response' : R, 'Tasa' : Res, 'Ratio' : Ratio,'Latency':times,'Throughput':through})
     return jsonify(), 200
 
