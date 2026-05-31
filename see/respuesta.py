@@ -4,10 +4,26 @@ import statistics
 import numpy as np
 import requests
 import time
+from confluent_kafka import Producer, Consumer
+import json
 
 app = Flask(__name__)
 
 CSV_PATH = '/data/filtro.csv'
+
+conf = {
+    'bootstrap.servers': 'kafka:29092',
+    'group.id': 'backend',
+    'auto.offset.reset': 'earliest' # Start from the beginning if no offset exists
+}
+
+prod = Producer({'bootstrap.servers': 'kafka:29092'})
+
+# Initialize the consumer
+consumer = Consumer(conf)
+
+# 2. Subscribe to the topic(s)
+consumer.subscribe(['backend','backend2'])
 
 # Zonas
 ZONAS = {
@@ -38,54 +54,6 @@ def cargar_csv():
         
     return edificios
 
-@app.route('/data', methods=['POST'])
-def receive_data():
-    # request.get_json() automatically parses the JSON you sent
-    dat = request.get_json()
-    
-    Query=dat.get('Q')
-    Zone=dat.get('Z')
-    times=time.time()
-    times=times+dat.get('time')
-
-    llave=list(ZONAS.keys())
-    llave_zone=llave[Zone-1]
-    if Query==1:
-        respone=q1_count(llave_zone, 0)
-
-    elif Query ==2:
-        respone=q2_area(llave_zone, 0)
-    elif Query ==3:
-        respone=q3_density(llave_zone, 0)
-    elif Query ==5:
-        respone=q5_confidence_dist(llave_zone)
-    print("back to redis")
-    requests.post("http://csv-writer:5000/data", json={"Q":Query,"Z":Zone,"R":respone, "Tasa" : "Miss","time":times})
-    return jsonify(respone), 200
-
-@app.route('/data2', methods=['POST'])                 #para query 4
-def receive_data_2():
-    # request.get_json() automatically parses the JSON you sent
-    dat = request.get_json()
-    
-    Query=dat.get('Q')
-    Zone=dat.get('Z')
-    Zone2=dat.get('Z2')
-    llave=list(ZONAS.keys())
-    llave_zone=llave[Zone-1]
-    llave_zone2=llave[Zone2-1]
-   # times=time.time()
-    times=dat.get('time')
-
-    if Query ==4:
-
-        respone=q4_compare(llave_zone,llave_zone2, 0)
-
-    print("back to redis")
-    Zones=Zone*10+Zone2
-    requests.post("http://csv-writer:5000/data", json={"Q":Query,"Z":Zones,"R":respone, "Tasa" : "Miss","time":times})
-    return jsonify(respone), 200
-
 def q1_count ( zone_id , confidence_min =0.0) :
     records = building [ zone_id ] # registros precargados para la zona
     return sum (1 for r in records if r . get('confidence', 0) >= confidence_min) 
@@ -93,6 +61,8 @@ def q1_count ( zone_id , confidence_min =0.0) :
 def q2_area ( zone_id , confidence_min =0.0) :
     # Using r['area'] and r['confidence']
     areas = [ r['area_in_meters'] for r in building[zone_id] if r['confidence'] >= confidence_min ]
+    if len(areas) == 0:
+        return { "avg_area": 0, "total_area": 0, "n": 0 }
     return { " avg_area " : statistics.mean ( areas ) , " total_area " : sum ( areas ) , " n " : len ( areas ) }
 
 def q3_density ( zone_id , confidence_min =0.0) :
@@ -134,4 +104,56 @@ def q5_confidence_dist(zone_id, bins=5):
 if __name__ == "__main__":
     # In Docker, you MUST use host='0.0.0.0' to be reachable
     building = cargar_csv()
-    app.run(host='0.0.0.0', port=5000)
+    print("Backend")
+    while True:
+        # request.get_json() automatically parses the JSON you sent
+        msg = consumer.poll(1.0)
+        if msg is None: continue
+        if msg.error(): continue
+
+        data = json.loads(msg.value().decode('utf-8'))
+        topic_name = msg.topic()
+        
+        if topic_name=='backend':
+            print("backend1")
+            Query=data["Q"]
+            Zone=data["Z"]
+            times=data["T"]
+
+            llave=list(ZONAS.keys())
+            llave_zone=llave[Zone-1]
+            if Query==1:
+                respone=q1_count(llave_zone, 0)
+
+            elif Query ==2:
+                respone=q2_area(llave_zone, 0)
+            elif Query ==3:
+                respone=q3_density(llave_zone, 0)
+            elif Query ==5:
+                respone=q5_confidence_dist(llave_zone)
+            print("back to redis")
+            requests.post("http://csv-writer:5000/data", json={"Q":Query,"Z":Zone,"R":respone, "Tasa" : "Miss","time":times})
+
+            respuesta = {"Qr":Query,"Zr":Zone,"R":respone}
+            prod.produce('respuestas',value=json.dumps(respuesta).encode('utf-8'))
+
+        if topic_name=='backend2':
+            print("backend2")
+        
+            Query=data["Q"]
+            Zone=data["Z"]
+            times=data["T"]
+            Zone2=data["Z2"]
+            llave=list(ZONAS.keys())
+            llave_zone=llave[Zone-1]
+            llave_zone2=llave[Zone2-1]
+
+            if Query ==4:
+
+                respone=q4_compare(llave_zone,llave_zone2, 0)
+
+            print("back to redis")
+            Zones=Zone*10+Zone2
+            requests.post("http://csv-writer:5000/data", json={"Q":Query,"Z":Zones,"R":respone, "Tasa" : "Miss","time":times})
+            respuesta = {"Qr":Query,"Zr":Zone,"Z2r":Zone2,"R":respone}
+            prod.produce('respuestas2',value=json.dumps(respuesta).encode('utf-8'))
