@@ -5,7 +5,7 @@ WORKDIR /app
 RUN pip install redis
 RUN pip install flask
 RUN pip install requests
-
+RUN pip install --no-cache-dir confluent-kafka
 
 COPY . .
 
