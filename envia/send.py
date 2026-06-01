@@ -4,8 +4,12 @@ import random
 import requests
 #from flask import request, Flask, jsonify
 from confluent_kafka import Producer
+import string
 
 prod = Producer({'bootstrap.servers': 'kafka:29092'})
+
+length = 10
+alphabet = string.ascii_letters + string.digits
 
 def ejecutar_consultas():
     hits = 0
@@ -18,11 +22,11 @@ def ejecutar_consultas():
     print("sending ", Query, " ", Zone)
     if Query == 4:
         Zone2 = random.randrange(1,5)
-        data = {"Q":Query, "Z":Zone, "Z2": Zone2, "T":time.time()}
-        response = prod.produce('queries', value=json.dumps(data).encode('utf-8'))
+        data = {"ID":''.join(random.choice(alphabet) for _ in range(length)) , "Retry":0,"Q":Query, "Z":Zone, "Z2": Zone2, "T":time.time()}
+        response = prod.produce('queries2', value=json.dumps(data).encode('utf-8'))
 
     else:
-        data = {"Q":Query, "Z":Zone,  "T":time.time()}
+        data = {"ID":''.join(random.choice(alphabet) for _ in range(length)) , "Retry":0,"Q":Query, "Z":Zone,  "T":time.time()}
         response = prod.produce('queries', value=json.dumps(data).encode('utf-8'))
 
 def ejecutar_consultas_zipf():
@@ -38,12 +42,12 @@ def ejecutar_consultas_zipf():
     print("sending ", Query, " ", Zone)
     if Query == 4:
         Zone2 = random.randrange(1,5)
-        data = {"Q":Query, "Z":Zone, "Z2": Zone2, "T":time.time()}
+        data = {"ID":''.join(random.choice(alphabet) for _ in range(length)) , "Retry":0,"Q":Query, "Z":Zone, "Z2": Zone2, "T":time.time()}
         prod.produce('queries2', value=json.dumps(data).encode('utf-8'))
 
     else:
 
-        data = {"Q":Query, "Z":Zone,  "T":time.time()}
+        data = {"ID":''.join(random.choice(alphabet) for _ in range(length)) , "Retry":0,"Q":Query, "Z":Zone,  "T":time.time()}
         prod.produce('queries', value=json.dumps(data).encode('utf-8'))
 
 
@@ -65,7 +69,7 @@ if __name__ == '__main__':
         while True:
             try:
                 ejecutar_consultas_zipf()
-                prod.poll(0)
+                #prod.poll(0)
                 time.sleep(1)
             except:
                 print("Nope")
