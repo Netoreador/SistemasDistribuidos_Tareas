@@ -11,7 +11,6 @@ Hits=0
 
 @app.route('/data', methods=['POST'])
 def receive_data():
-    # request.get_json() automatically parses the JSON you sent
     global Total
     global Hits
     data = request.get_json()
@@ -24,7 +23,10 @@ def receive_data():
     Res=data.get('Tasa')
     times=data.get('time')
     times = time.time()-times
-
+    retrys=data.get('retry')
+    tiempo_elapsado = time.time()-tiempo_total
+    if times == 0.0:
+        times = 0.01  # FIX: was 'times == 0.01' (comparison instead of assignment)
     if Res == 'Miss':
         Total +=1
 
@@ -35,20 +37,19 @@ def receive_data():
     Ratio = Hits/Total
     print("about to write")
     with open('/data/results.csv', 'a', newline='') as csvfile:
-        fieldnames = ['Query', 'Zone', 'Response', 'Tasa', 'Ratio','Latency','Throughput']
+        fieldnames = ['Query', 'Zone', 'Response','#Retry', 'Tasa', 'Ratio','Latency','Throughput']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         print("writing")
         
-        through = Total/times
-        writer.writerow({'Query': Q, 'Zone': Z, 'Response' : R, 'Tasa' : Res, 'Ratio' : Ratio,'Latency':times,'Throughput':through})
+        through = Total/tiempo_elapsado
+        writer.writerow({'Query': Q, 'Zone': Z, 'Response' : R,'#Retry':retrys, 'Tasa' : Res, 'Ratio' : Ratio,'Latency':times,'Throughput':through})
     return jsonify(), 200
 
 
     
 if __name__ == "__main__":
-    # In Docker, you MUST use host='0.0.0.0' to be reachable
     with open('/data/results.csv', 'a', newline='') as csvfile:
-        fieldnames = ['Query', 'Zone', 'Response', 'Tasa', 'Ratio','Latency','Throughput']
+        fieldnames = ['Query', 'Zone', 'Response','#Retry', 'Tasa', 'Ratio','Latency','Throughput']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
     app.run(host='0.0.0.0', port=5000)
