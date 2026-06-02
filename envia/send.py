@@ -23,11 +23,11 @@ def ejecutar_consultas():
     if Query == 4:
         Zone2 = random.randrange(1,5)
         data = {"ID":''.join(random.choice(alphabet) for _ in range(length)) , "Retry":0,"Q":Query, "Z":Zone, "Z2": Zone2, "T":time.time()}
-        response = prod.produce('queries2', value=json.dumps(data).encode('utf-8'))
+        prod.produce('queries2', value=json.dumps(data).encode('utf-8'))
 
     else:
         data = {"ID":''.join(random.choice(alphabet) for _ in range(length)) , "Retry":0,"Q":Query, "Z":Zone,  "T":time.time()}
-        response = prod.produce('queries', value=json.dumps(data).encode('utf-8'))
+        prod.produce('queries', value=json.dumps(data).encode('utf-8'))
 
 def ejecutar_consultas_zipf():
     
